@@ -18,6 +18,20 @@ ai:
   # AI filter always ran on a separate thread, so it won't affect the performance of the server.
   send-every: 600 # when should we send messages to the AI? in seconds.
 
+
+# Artificial AIFilter will not work if there is an active staff on the server.
+# In this way, if there is an active staff person, an AI call will not be made.
+online-staff-block-aifilter: true
+# if true: you'll see this message "AI filtering canceled (have online staff(s))" in console.
+# if false: you will not see any message for this reason.
+log-ai-cancel-reason: true
+# You can add your staff groups below
+staff-groups:
+  - admin
+  - staff
+  - helper
+
+
 punishments:
   VIOLENT:
     name: "Violent Threats or Glorification"

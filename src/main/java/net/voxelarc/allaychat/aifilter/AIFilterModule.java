@@ -3,6 +3,8 @@ package net.voxelarc.allaychat.aifilter;
 import com.openai.client.OpenAIClient;
 import com.openai.client.okhttp.OpenAIOkHttpClient;
 import lombok.Getter;
+import net.luckperms.api.LuckPerms;
+import net.luckperms.api.LuckPermsProvider;
 import net.voxelarc.allaychat.aifilter.filter.AIFilter;
 import net.voxelarc.allaychat.aifilter.util.AIUtils;
 import net.voxelarc.allaychat.api.module.Module;
@@ -21,6 +23,8 @@ public final class AIFilterModule extends Module {
     private OpenAIClient aiClient;
 
     private final List<PlayerMessage> messagesToSend = new ArrayList<>();
+
+    private LuckPerms luckPerms;
 
     @Override
     public void onEnable() {
@@ -49,6 +53,14 @@ public final class AIFilterModule extends Module {
         }.runTaskTimer(getPlugin(), delay, delay);
 
         this.getPlugin().addFilter(new AIFilter(this));
+
+        try {
+            this.luckPerms = LuckPermsProvider.get();
+            getLogger().info("LuckPerms successfully received.");
+        } catch (IllegalStateException e) {
+            getLogger().warning("LuckPerms not found, some features will be disabled.");
+            this.luckPerms = null;
+        }
     }
 
     @Override

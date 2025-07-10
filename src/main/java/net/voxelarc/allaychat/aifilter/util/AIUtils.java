@@ -5,15 +5,15 @@ import com.openai.client.OpenAIClient;
 import com.openai.models.chat.completions.ChatCompletionCreateParams;
 import com.openai.models.chat.completions.StructuredChatCompletion;
 import com.openai.models.chat.completions.StructuredChatCompletionCreateParams;
-import litebans.api.Database;
 import net.voxelarc.allaychat.aifilter.AIFilterModule;
 import net.voxelarc.allaychat.api.event.DetectionEvent;
 import org.bukkit.Bukkit;
-import org.bukkit.OfflinePlayer;
+import org.bukkit.entity.Player;
+import net.luckperms.api.LuckPerms;
+import net.luckperms.api.model.user.User;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.UUID;
 import java.util.logging.Level;
 
 public class AIUtils {
@@ -21,6 +21,26 @@ public class AIUtils {
     private static final Gson GSON = new Gson();
 
     public static void sendMessages(OpenAIClient client, AIFilterModule module) {
+
+        if (module.getConfig().getBoolean("online-staff-block-aifilter", true)) {
+            List<String> staffGroups = module.getConfig().getStringList("staff-groups");
+
+            for (Player player : Bukkit.getOnlinePlayers()) {
+                LuckPerms luckPerms = module.getLuckPerms();
+                User user = luckPerms.getUserManager().getUser(player.getUniqueId());
+
+                if (user != null) {
+                    String group = user.getPrimaryGroup();
+                    if (staffGroups.contains(group.toLowerCase())) {
+                        if (module.getConfig().getBoolean("log-ai-cancel-reason", true)) {
+                            module.getLogger().log(Level.INFO, "AI filtering canceled (have online staff(s))");
+                        }
+                        return;
+                    }
+                }
+            }
+        }
+
         String json = GSON.toJson(new ArrayList<>(module.getMessagesToSend()));
 
         module.getMessagesToSend().clear();
@@ -45,17 +65,6 @@ public class AIUtils {
 
             if (playerName == null || point < 0 || category == null || message == null) {
                 module.getLogger().log(Level.SEVERE, "Invalid detection data: " + detection);
-                continue;
-            }
-
-            OfflinePlayer offlinePlayer = Bukkit.getOfflinePlayer(playerName);
-            UUID uuid = offlinePlayer.getUniqueId();
-
-            boolean isMuted = Database.get().isPlayerMuted(uuid, null);
-            boolean isBanned = Database.get().isPlayerBanned(uuid, null);
-
-            if (isMuted || isBanned) {
-                module.getLogger().log(Level.INFO, "Skipping punishment for " + playerName + " (already muted or banned)");
                 continue;
             }
 
